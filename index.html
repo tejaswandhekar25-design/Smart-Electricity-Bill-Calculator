@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Smart Electricity Bill Calculator - Calculate bills with slab rates, track monthly usage, predict future bills, and get energy saving tips.">
+  <title>⚡ Smart Electricity Bill Calculator</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <!-- Background effects -->
+  <div class="bg-grid"></div>
+  <div class="bg-orb bg-orb-1"></div>
+  <div class="bg-orb bg-orb-2"></div>
+  <div class="bg-orb bg-orb-3"></div>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <div class="logo-icon">⚡</div>
+        <span class="logo-text">ElectroBill</span>
+      </div>
+      <nav class="nav-tabs" id="navTabs">
+        <button class="nav-tab active" data-section="calculator" id="nav-calculator">🧮 Calculator</button>
+        <button class="nav-tab" data-section="usage" id="nav-usage">📊 Usage</button>
+        <button class="nav-tab" data-section="prediction" id="nav-prediction">🔮 Predict</button>
+        <button class="nav-tab" data-section="appliances" id="nav-appliances">🔌 Appliances</button>
+        <button class="nav-tab" data-section="tips" id="nav-tips">💡 Tips</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="main">
+
+    <!-- ======================== CALCULATOR SECTION ======================== -->
+    <section class="section active" id="section-calculator">
+      <h1 class="section-title animate-in">Bill Calculator</h1>
+      <p class="section-subtitle animate-in delay-1">Calculate your electricity bill using Indian slab rates</p>
+
+      <div class="grid-2">
+        <!-- Input Form -->
+        <div class="card animate-in delay-2">
+          <div class="card-header">
+            <div class="card-icon electric">🧮</div>
+            <h2 class="card-title">Enter Details</h2>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="stateSelect">State / Board</label>
+            <select class="form-select" id="stateSelect">
+              <option value="maharashtra">Maharashtra (MSEDCL)</option>
+              <option value="delhi">Delhi (BSES/Tata)</option>
+              <option value="karnataka">Karnataka (BESCOM)</option>
+              <option value="tamilnadu">Tamil Nadu (TNEB)</option>
+              <option value="up">Uttar Pradesh (UPPCL)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="consumerType">Consumer Type</label>
+            <select class="form-select" id="consumerType">
+              <option value="residential">Residential (Domestic)</option>
+              <option value="commercial">Commercial</option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="unitsConsumed">Units Consumed (kWh)</label>
+              <input type="number" class="form-input" id="unitsConsumed" placeholder="e.g. 250" min="0">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="sanctionedLoad">Sanctioned Load (kW)</label>
+              <input type="number" class="form-input" id="sanctionedLoad" placeholder="e.g. 3" min="0" step="0.5" value="3">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="billingMonth">Billing Month</label>
+            <input type="month" class="form-input" id="billingMonth">
+          </div>
+
+          <button class="btn btn-primary btn-full" id="calculateBtn" onclick="calculateBill()">
+            ⚡ Calculate Bill
+          </button>
+        </div>
+
+        <!-- Result -->
+        <div>
+          <div class="card animate-in delay-3">
+            <div class="card-header">
+              <div class="card-icon volt">📋</div>
+              <h2 class="card-title">Bill Summary</h2>
+            </div>
+
+            <div id="billPlaceholder" style="text-align:center; padding:3rem 1rem; color: var(--text-muted);">
+              <div style="font-size:3rem; margin-bottom:1rem;">⚡</div>
+              <p>Enter your consumption details and click<br><strong>Calculate Bill</strong> to see the breakdown</p>
+            </div>
+
+            <div class="bill-result" id="billResult">
+              <div class="bill-total">
+                <div class="bill-total-label">Total Bill Amount</div>
+                <div class="bill-total-amount"><span class="currency">₹</span><span id="totalAmount">0</span></div>
+              </div>
+
+              <div class="grid-4" style="margin-bottom:1.5rem;" id="billStats">
+                <!-- Filled by JS -->
+              </div>
+
+              <h3 style="font-size:0.9rem; color:var(--text-secondary); margin-bottom:0.75rem;">Slab Breakdown</h3>
+              <table class="slab-table" id="slabTable">
+                <thead>
+                  <tr>
+                    <th>Slab</th>
+                    <th>Units</th>
+                    <th>Rate</th>
+                    <th>Amount</th>
+                    <th>Usage</th>
+                  </tr>
+                </thead>
+                <tbody id="slabBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================== USAGE SECTION ======================== -->
+    <section class="section" id="section-usage">
+      <h1 class="section-title animate-in">Monthly Usage</h1>
+      <p class="section-subtitle animate-in delay-1">Track and visualize your electricity consumption over time</p>
+
+      <div class="grid-4 animate-in delay-2" id="usageStats">
+        <div class="stat-card">
+          <div class="stat-value electric" id="avgUnits">0</div>
+          <div class="stat-label">Avg Units/Mo</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value volt" id="avgBill">₹0</div>
+          <div class="stat-label">Avg Bill/Mo</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value energy" id="lowestMonth">—</div>
+          <div class="stat-label">Lowest Month</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value warn" id="highestMonth">—</div>
+          <div class="stat-label">Highest Month</div>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-top:1.5rem;">
+        <div class="card animate-in delay-3">
+          <div class="card-header">
+            <div class="card-icon electric">📊</div>
+            <h2 class="card-title">Units Consumed</h2>
+          </div>
+          <div class="chart-container">
+            <canvas id="usageChart"></canvas>
+          </div>
+        </div>
+        <div class="card animate-in delay-4">
+          <div class="card-header">
+            <div class="card-icon energy">💰</div>
+            <h2 class="card-title">Bill Amounts</h2>
+          </div>
+          <div class="chart-container">
+            <canvas id="billChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Add usage data -->
+      <div class="card animate-in" style="margin-top:1.5rem; max-width:600px;">
+        <div class="card-header">
+          <div class="card-icon warn">➕</div>
+          <h2 class="card-title">Log Monthly Data</h2>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="logMonth">Month</label>
+            <input type="month" class="form-input" id="logMonth">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="logUnits">Units (kWh)</label>
+            <input type="number" class="form-input" id="logUnits" placeholder="e.g. 200" min="0">
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="logUsageData()" id="logUsageBtn">➕ Add Data</button>
+        <button class="btn btn-secondary" onclick="loadSampleData()" id="sampleDataBtn" style="margin-left:8px;">📋 Load Sample</button>
+      </div>
+    </section>
+
+    <!-- ======================== PREDICTION SECTION ======================== -->
+    <section class="section" id="section-prediction">
+      <h1 class="section-title animate-in">Bill Prediction</h1>
+      <p class="section-subtitle animate-in delay-1">AI-powered prediction of your next month's electricity bill</p>
+
+      <div class="grid-2">
+        <div class="card animate-in delay-2">
+          <div class="card-header">
+            <div class="card-icon volt">🔮</div>
+            <h2 class="card-title">Predicted Next Month</h2>
+          </div>
+
+          <div id="predictionContent">
+            <div class="prediction-meter">
+              <div class="prediction-circle">
+                <div class="prediction-value" id="predictedBill">₹0</div>
+                <div class="prediction-label">Predicted Bill</div>
+              </div>
+            </div>
+
+            <div class="grid-2" style="gap:1rem; margin-top:1rem;">
+              <div class="stat-card">
+                <div class="stat-value electric" id="predictedUnits">0</div>
+                <div class="stat-label">Est. Units</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="predTrend" style="font-size:1rem;">—</div>
+                <div class="stat-label">Trend</div>
+              </div>
+            </div>
+
+            <p id="predictionNote" style="margin-top:1rem; font-size:0.85rem; color:var(--text-muted); text-align:center;">
+              Add at least 3 months of usage data for prediction
+            </p>
+          </div>
+        </div>
+
+        <div class="card animate-in delay-3">
+          <div class="card-header">
+            <div class="card-icon energy">📈</div>
+            <h2 class="card-title">Trend Analysis</h2>
+          </div>
+          <div class="chart-container">
+            <canvas id="trendChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================== APPLIANCES SECTION ======================== -->
+    <section class="section" id="section-appliances">
+      <h1 class="section-title animate-in">Appliance Calculator</h1>
+      <p class="section-subtitle animate-in delay-1">Calculate power consumption for each appliance (P = V × I)</p>
+
+      <div class="formula-box animate-in delay-2">
+        <div class="formula-text">P = V × I</div>
+        <div class="formula-desc">Power (Watts) = Voltage (Volts) × Current (Amperes)</div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card animate-in delay-3">
+          <div class="card-header">
+            <div class="card-icon electric">🔌</div>
+            <h2 class="card-title">Add Appliance</h2>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="applianceName">Appliance</label>
+            <select class="form-select" id="applianceName">
+              <option value="💡|LED Bulb|10">💡 LED Bulb (10W)</option>
+              <option value="💡|CFL Bulb|25">💡 CFL Bulb (25W)</option>
+              <option value="📺|Television|100">📺 Television (100W)</option>
+              <option value="❄️|Refrigerator|150">❄️ Refrigerator (150W)</option>
+              <option value="🌀|Ceiling Fan|75">🌀 Ceiling Fan (75W)</option>
+              <option value="❄️|Air Conditioner (1T)|1200">❄️ AC 1 Ton (1200W)</option>
+              <option value="❄️|Air Conditioner (1.5T)|1800">❄️ AC 1.5 Ton (1800W)</option>
+              <option value="🧺|Washing Machine|500">🧺 Washing Machine (500W)</option>
+              <option value="🔥|Water Heater|2000">🔥 Water Heater (2000W)</option>
+              <option value="💻|Laptop|65">💻 Laptop (65W)</option>
+              <option value="🖥️|Desktop PC|300">🖥️ Desktop PC (300W)</option>
+              <option value="📱|Phone Charger|10">📱 Phone Charger (10W)</option>
+              <option value="🍞|Microwave|1200">🍞 Microwave (1200W)</option>
+              <option value="🧹|Vacuum Cleaner|800">🧹 Vacuum Cleaner (800W)</option>
+              <option value="⚙️|Custom">⚙️ Custom Appliance</option>
+            </select>
+          </div>
+
+          <div id="customApplianceFields" style="display:none;">
+            <div class="form-group">
+              <label class="form-label" for="customName">Custom Name</label>
+              <input type="text" class="form-input" id="customName" placeholder="e.g. Iron">
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="voltageInput">Voltage (V)</label>
+                <input type="number" class="form-input" id="voltageInput" value="230" min="0">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="currentInput">Current (A)</label>
+                <input type="number" class="form-input" id="currentInput" placeholder="e.g. 4.5" min="0" step="0.1">
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="applianceQty">Quantity</label>
+              <input type="number" class="form-input" id="applianceQty" value="1" min="1">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="applianceHours">Hours/Day</label>
+              <input type="number" class="form-input" id="applianceHours" value="4" min="0" max="24" step="0.5">
+            </div>
+          </div>
+
+          <button class="btn btn-primary btn-full" onclick="addAppliance()" id="addApplianceBtn">🔌 Add Appliance</button>
+        </div>
+
+        <div class="card animate-in delay-4">
+          <div class="card-header">
+            <div class="card-icon energy">📋</div>
+            <h2 class="card-title">Your Appliances</h2>
+            <span class="badge badge-electric" id="applianceCount">0 items</span>
+          </div>
+
+          <div class="appliance-list" id="applianceList">
+            <div style="text-align:center; padding:2rem; color:var(--text-muted);">
+              <div style="font-size:2.5rem; margin-bottom:0.5rem;">🔌</div>
+              <p>Add appliances to see their<br>power consumption breakdown</p>
+            </div>
+          </div>
+
+          <div id="applianceSummary" style="display:none; margin-top:1rem; padding-top:1rem; border-top:1px solid var(--border-glass);">
+            <div class="grid-2" style="gap:0.75rem;">
+              <div class="stat-card">
+                <div class="stat-value electric" id="totalWatts">0W</div>
+                <div class="stat-label">Total Power</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value energy" id="totalMonthlyCost">₹0</div>
+                <div class="stat-label">Monthly Cost</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value volt" id="totalUnitsMonth">0</div>
+                <div class="stat-label">Units/Month</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value warn" id="dailyUnits">0</div>
+                <div class="stat-label">Units/Day</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Appliance chart -->
+      <div class="card" style="margin-top:1.5rem;" id="applianceChartCard" hidden>
+        <div class="card-header">
+          <div class="card-icon warn">🍩</div>
+          <h2 class="card-title">Power Distribution</h2>
+        </div>
+        <div class="chart-container" style="max-width:450px; margin:0 auto;">
+          <canvas id="applianceChart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================== TIPS SECTION ======================== -->
+    <section class="section" id="section-tips">
+      <h1 class="section-title animate-in">Energy Saving Tips</h1>
+      <p class="section-subtitle animate-in delay-1">Smart ways to reduce your electricity bill and save money</p>
+
+      <div class="grid-2">
+        <div class="animate-in delay-2">
+          <div class="tip-card">
+            <div class="tip-icon">💡</div>
+            <div class="tip-content">
+              <h4>Switch to LED Bulbs</h4>
+              <p>LED bulbs use up to 80% less energy than incandescent bulbs and last 25 times longer.</p>
+              <span class="tip-savings">Save up to ₹2,000/year</span>
+            </div>
+          </div>
+          <div class="tip-card">
+            <div class="tip-icon">❄️</div>
+            <div class="tip-content">
+              <h4>AC Temperature at 24°C</h4>
+              <p>Each degree below 24°C increases energy consumption by 6%. Use the timer and sleep mode.</p>
+              <span class="tip-savings">Save up to ₹3,500/year</span>
+            </div>
+          </div>
+          <div class="tip-card">
+            <div class="tip-icon">⭐</div>
+            <div class="tip-content">
+              <h4>Use 5-Star Rated Appliances</h4>
+              <p>BEE 5-star rated appliances consume 25-30% less electricity compared to lower-rated ones.</p>
+              <span class="tip-savings">Save up to ₹4,000/year</span>
+            </div>
+          </div>
+          <div class="tip-card">
+            <div class="tip-icon">🌀</div>
+            <div class="tip-content">
+              <h4>Optimize Fan Usage</h4>
+              <p>Use BLDC fans that consume only 28-35W compared to 75W for conventional fans.</p>
+              <span class="tip-savings">Save up to ₹1,500/year</span>
+            </div>
+          </div>
+          <div class="tip-card">
+            <div class="tip-icon">🔥</div>
+            <div class="tip-content">
+              <h4>Solar Water Heater</h4>
+              <p>Install a solar water heater to eliminate geyser electricity usage, which accounts for ~25% of bills in winter.</p>
+              <span class="tip-savings">Save up to ₹5,000/year</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="animate-in delay-3">
+          <div class="tip-card">
+            <div class="tip-icon">🔌</div>
+            <div class="tip-content">
+              <h4>Unplug Standby Devices</h4>
+              <p>Standby power accounts for 5-10% of total electricity use. Use power strips to easily switch off.</p>
+              <span class="tip-savings">Save up to ₹1,200/year</span>
+            </div>
+          </div>
+          <div class="tip-card">
+            <div class="tip-icon">🧺</div>
+            <div class="tip-content">
+              <h4>Full Load Washing</h4>
+              <p>Run washing machines only on full load. Use cold water settings to save heating energy.</p>
+              <span class="tip-savings">Save up to ₹800/year</span>
+            </div>
+          </div>
+          <div class="tip-card">
+            <div class="tip-icon">❄️</div>
+            <div class="tip-content">
+              <h4>Fridge Maintenance</h4>
+              <p>Keep fridge coils clean, ensure door seals are tight, and set temp to 3-5°C. Don't place hot food inside.</p>
+              <span class="tip-savings">Save up to ₹1,000/year</span>
+            </div>
+          </div>
+          <div class="tip-card">
+            <div class="tip-icon">☀️</div>
+            <div class="tip-content">
+              <h4>Natural Light & Ventilation</h4>
+              <p>Use natural daylight instead of artificial lighting. Open windows for cross-ventilation to reduce AC usage.</p>
+              <span class="tip-savings">Save up to ₹1,500/year</span>
+            </div>
+          </div>
+          <div class="tip-card">
+            <div class="tip-icon">🏠</div>
+            <div class="tip-content">
+              <h4>Go Solar with Net Metering</h4>
+              <p>Install rooftop solar panels. With net metering, you can sell excess power back to the grid and slash your bill.</p>
+              <span class="tip-savings">Save up to ₹15,000/year</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Total potential savings -->
+      <div class="card animate-in" style="margin-top:1.5rem; text-align:center;">
+        <div style="font-size:1rem; color:var(--text-secondary); margin-bottom:0.5rem;">💰 Total Potential Annual Savings</div>
+        <div style="font-family:'Orbitron',sans-serif; font-size:2.5rem; font-weight:800; color:var(--accent-energy);">₹35,500+</div>
+        <div style="font-size:0.85rem; color:var(--text-muted); margin-top:0.5rem;">By implementing all energy-saving measures</div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <p>⚡ Smart Electricity Bill Calculator — Built with 💛 | © 2026</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
